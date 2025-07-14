@@ -1,0 +1,1 @@
+web: gunicorn sentinelai_backend.wsgi
