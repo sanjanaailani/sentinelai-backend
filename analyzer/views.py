@@ -6,17 +6,32 @@ import numpy as np
 @csrf_exempt
 def analyze(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        timestamps = data.get('timestamps', [])
-        
-        if not timestamps or len(timestamps) < 2:
-            return JsonResponse({'error': 'Not enough data'}, status=400)
+        try:
+            data = json.loads(request.body)
+            timestamps = data.get('timestamps', [])
 
-        intervals = np.diff(timestamps)
-        risk_score = float(np.std(intervals) / (np.mean(intervals) + 1e-6))
-        risk_score = min(max(risk_score, 0.0), 1.0)
+            if len(timestamps) < 2:
+                return JsonResponse({'riskScore': 0.1})  # Very low risk due to insufficient data
 
-        return JsonResponse({'riskScore': risk_score})
+            # Calculate typing intervals
+            gaps = np.diff(timestamps)
+            
+            # Clip out extremely small or long gaps (e.g., noise, pauses)
+            gaps = np.clip(gaps, 50, 2000)  # ms
 
-    # For GET or other methods, return JSON instead of template
-    return JsonResponse({"message": "Analyze endpoint is live. Use POST with timestamps."})
+            mean_gap = np.mean(gaps)
+            std_gap = np.std(gaps)
+
+            # Normalize the std deviation and offset to ignore minor fluctuations
+            normalized_std = std_gap / (mean_gap + 1e-6)
+
+            # Risk score logic: tolerate normal human variation
+            adjusted_score = max(0.0, (normalized_std - 0.1) * 2)
+            risk_score = round(min(adjusted_score, 1.0), 2)
+
+            return JsonResponse({'riskScore': risk_score})
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
