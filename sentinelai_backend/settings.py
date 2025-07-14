@@ -10,6 +10,8 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.staticfiles',
+    'django.contrib.auth',         
+    'django.contrib.contenttypes', 
     'rest_framework',
     'corsheaders',
     'analyzer',
