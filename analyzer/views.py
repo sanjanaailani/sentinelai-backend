@@ -1,21 +1,22 @@
-
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from django.views.decorators.csrf import csrf_exempt
+import json
 import numpy as np
 
-@api_view(["POST"])
+@csrf_exempt
 def analyze(request):
-    timestamps = request.data.get("timestamps", [])
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        timestamps = data.get('timestamps', [])
+        
+        if not timestamps or len(timestamps) < 2:
+            return JsonResponse({'error': 'Not enough data'}, status=400)
 
-    if len(timestamps) < 2:
-        return JsonResponse({"riskScore": 0.0})
+        intervals = np.diff(timestamps)
+        risk_score = float(np.std(intervals) / (np.mean(intervals) + 1e-6))
+        risk_score = min(max(risk_score, 0.0), 1.0)
 
-    # Convert to milliseconds, then calculate time differences
-    time_diffs = np.diff(timestamps)
-    avg_speed = np.mean(time_diffs)
+        return JsonResponse({'riskScore': risk_score})
 
-    # Risk logic: faster typing → lower risk, erratic → higher risk
-    std_dev = np.std(time_diffs)
-    risk_score = min(1.0, std_dev / 200)  # Normalize to 0-1 range
-
-    return JsonResponse({"riskScore": round(float(risk_score), 2)})
+    # For GET or other methods, return JSON instead of template
+    return JsonResponse({"message": "Analyze endpoint is live. Use POST with timestamps."})
