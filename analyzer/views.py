@@ -1,6 +1,4 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from django.http import JsonResponse
 
-@api_view(['GET'])
 def analyze(request):
-    return Response({"message": "Analyze endpoint is working"})
+    return JsonResponse({"message": "Analyze endpoint is working"})
