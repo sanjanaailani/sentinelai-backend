@@ -3,6 +3,5 @@ from django.urls import path
 from analyzer.views import analyze
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('analyze/', analyze),  
+    path('analyze/', analyze, name='analyze'),
 ]
